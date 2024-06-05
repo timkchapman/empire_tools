@@ -6,11 +6,13 @@ $(document).ready(function () {
         var crowns = parseInt($('#crowns').val()) || 0;
         var thrones = parseInt($('#thrones').val()) || 0;
         var output_unit = $('#output_unit').val();
+        var csrf_token = $('input[name="csrf_token"]').val(); // Retrieve CSRF token
 
         $.ajax({
             url: '/calculate',
             method: 'POST',
             contentType: 'application/json',
+            headers: { 'X-CSRFToken': csrf_token }, // Set CSRF token in request header
             data: JSON.stringify({
                 rings: rings,
                 crowns: crowns,
