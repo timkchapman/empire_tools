@@ -93,6 +93,13 @@
             <br>
             <br>
             <a href="{{ url_for('manouveres.index') }}">Campaign Outcome</a>
+            {% if current_page == 'manouveres' %}
+            <ul>
+                <li><a href="{{ url_for('manouveres.forces', _external=True) }}">Forces</a></li>
+                <li><a href="{{ url_for('manouveres.qualities', _external=True) }}">Qualities</a></li>
+                <li><a href="{{ url_for('manouveres.orders', _external=True) }}">Orders</a></li>
+            </ul>
+            {% endif %}
             <a href="{{ url_for('calculator.index') }}">Calculator</a>
         </div>
         <div class="content">

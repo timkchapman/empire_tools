@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col text-center">
+            <a href="{{ url_for('manouveres.forces', _external=True) }}">
+                <h2>Armies</h2>
+            </a>
+        </div>
+    </div>
+    <table id="armyTable" class="table table-hover">
+        <thead>
+            <tr class="table-info">
+                <th>Army <button onclick="sortTable(0)"><span id="arrowArmy" class="arrow"></span></button></th>
+                <th>Nation <button onclick="sortTable(1)"><span id="arrowNation" class="arrow"></span></button></th>
+                <th>Quality <button onclick="sortTable(2)"><span id="arrowQuality" class="arrow"></span></button></th>
+                <th>Size <button onclick="sortTable(3)"><span id="arrowSize" class="arrow"></span></button></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for force in forces %}
+            <tr class="table-dark">
+                <td>{{ force.force_name }}</td>
+                <td>{{ force.nation.nation_name }}</td>
+                <td>{{ force.quality.quality_name }}</td>
+                {% if force.large %}
+                <td>Large Army</td>
+                {% else %}
+                <td>Small Army</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='js/forces_sort.js') }}"></script>
+{% endblock %}
