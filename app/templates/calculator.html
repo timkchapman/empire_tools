@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-6">
+            <form id="conversionForm">
+                <div class="form-group">
+                    <label for="rings">Rings</label>
+                    <input type="number" class="form-control" id="rings" name="rings" placeholder="Enter rings">
+                </div>
+                <div class="form-group">
+                    <label for="crowns">Crowns</label>
+                    <input type="number" class="form-control" id="crowns" name="crowns" placeholder="Enter crowns">
+                </div>
+                <div class="form-group">
+                    <label for="thrones">Thrones</label>
+                    <input type="number" class="form-control" id="thrones" name="thrones" placeholder="Enter thrones">
+                </div>
+                <div class="form-group">
+                    <label for="output_unit">Output</label>
+                    <select class="form-control" id="output_unit" name="output_unit">
+                        <option value="rings">Rings</option>
+                        <option value="crowns">Crowns</option>
+                        <option value="thrones">Thrones</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Convert</button>
+            </form>
+        </div>
+        <div id="result" class="mt-4 text-center"></div>
+    </div>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='js/calculation.js') }}"></script>
+{% endblock %}
