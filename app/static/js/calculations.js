@@ -13,7 +13,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const barbarianForces = collectForces('barbarian');
         const imperialFortifications = collectFortifications('imperial');
         const barbarianFortifications = collectFortifications('barbarian');
-        if (imperialForces.length === 0 || (barbarianForces.length + barbarianFortifications.length) === 0) {
+        const imperialMilitaryUnits = collectMilitaryUnits('imperial');
+        const barbarianMilitaryUnits = collectMilitaryUnits('barbarian');
+
+        console.log('Imperial Military Units:', imperialMilitaryUnits);
+
+        if ((imperialForces.length + imperialFortifications.length + imperialMilitaryUnits.length) === 0 ||
+            (barbarianForces.length + barbarianFortifications.length + barbarianMilitaryUnits.length) === 0) {
             alert('Please select combatants for both sides.');
             return;
         }
@@ -21,8 +27,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = {
             imperial_forces: imperialForces,
             imperial_fortifications: imperialFortifications,
+            imperial_military_units: imperialMilitaryUnits,
             barbarian_forces: barbarianForces,
-            barbarian_fortifications: barbarianFortifications
+            barbarian_fortifications: barbarianFortifications,
+            barbarian_military_units: barbarianMilitaryUnits
         };
 
         // Send data to the server for calculation
@@ -90,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return forces;
     }
 
+    // Function to collect fortifications data
     function collectFortifications(role) {
         const fortifications = [];
         const tableBody = document.getElementById(`${role}-forces`);
@@ -129,6 +138,57 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         return fortifications;
     }
+
+    // Function to collect military units data
+    function collectMilitaryUnits(role) {
+        const militaryUnits = [];
+        const tableBody = document.getElementById(`${role}-military-units`);
+
+        if (tableBody) {
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(function (row) {
+                const unitIndex = row.id.split('-').pop();
+                const countElement = document.getElementById(`${role}-mu-count-${unitIndex}`);
+                const strengthElement = document.getElementById(`${role}-mu-strength-${unitIndex}`);
+                const forceElement = document.getElementById(`${role}-mu-force-${unitIndex}`);
+                const countValue = countElement ? countElement.value : '';
+                const strengthValue = strengthElement ? strengthElement.value : '';
+                const forceValue = forceElement ? forceElement.value : '';
+                const forceType = forceElement ? forceElement.options[forceElement.selectedIndex].getAttribute('data-type') : '';
+
+                if (forceValue === '') {
+                    alert('Please select a valid force for all military units.');
+                    return;
+                }
+
+                if (strengthValue === '') {
+                    alert('Please enter a valid strength for all military units.');
+                    return;
+                }
+
+                if (countValue === '') {
+                    alert('Please enter a valid quantity for all military units.');
+                }
+
+                const militaryUnit = {
+                    count: countValue,
+                    strength: strengthValue,
+                    force: forceValue,
+                    type: forceType
+                };
+
+                if (strengthValue.trim() !== '' && forceValue.trim() !== '') {
+                    militaryUnits.push(militaryUnit);
+                }
+            });
+        } else {
+            console.log(`Table body not found for role '${role}'`);
+        }
+
+        console.log('Military units collected:', militaryUnits);
+        return militaryUnits;
+    }
+
 
     // Function to get CSRF token value
     function getCSRFToken() {
@@ -172,5 +232,4 @@ document.addEventListener('DOMContentLoaded', function () {
             forcesTable.appendChild(fortificationRow);
         }
     }
-
 });

@@ -570,5 +570,27 @@
         "casualties_suffered_modifier": 0,
         "territory_claimed_modifier": 0,
         "territory_defence_modifier": 0
+    },
+    {
+        "order_id": 52,
+        "order_name": "Hospitality of the Boyars",
+        "offensive_order": false,
+        "order_effects": "Can be used by a Varushkan army in the territory of Ossium. Casualties suffered by this army are decreased by a fifth. The army receives additiona natural resupply: 250 strength is ditstributed among all armies taking this order in the territory.",
+        "order_description": "The soldiers of the army are dispersed across the territory of Ossium, receiving the hospitality of the boyars of the vales. Commanders and officers are welcomed as guests at the armoury of Karantzy, given the opportunity to resupply their troops from the stock of weapons and armour sequestered there.",
+        "casualties_inflicted_modifier": 0,
+        "casualties_suffered_modifier": -0.2,
+        "territory_claimed_modifier": 0,
+        "territory_defence_modifier": 0
+    },
+    {
+        "order_id": 53,
+        "order_name": "Fight With Honour",
+        "offensive_order": true,
+        "order_effects": "There are no modifiers associated with this order. Any allied force that issues orders to plunder, cut them down, or carry out a merciless assault is changed to a balanced attack.",
+        "order_description": "Any Wintermark army instructed to fight with honour will execute a balanced attack against the enemy forces arrayed against them. In addition, they will ensure that any Imperial forces that fight alongside them are prevented from taking orders designed simply to rob, kill or maim the enemy. This will inflame tensions between the two forces, but they will not come into armed conflict, Imperial discipline will be sufficient to prevent one Imperial soldier cutting down another - just.  In addition, the army will actively seek to protect innocent civilians on both sides. Settlements will not be looted and the occupants will be protected from harm by either side.  Fighting with honour does not prevent enemy forces from issuing orders to plunder or kill.",
+        "casualties_inflicted_modifier": 0,
+        "casualties_suffered_modifier": 0,
+        "territory_claimed_modifier": 0,
+        "territory_defence_modifier": 0
     }
 ]

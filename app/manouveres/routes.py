@@ -36,12 +36,9 @@ def manouveres_with_slash():
 
 @bp.route('/get_force_options', methods=['POST'])
 def get_force_options():
-    role = request.form.get('role')
     selected_barbarian = request.form.get('selected_barbarian', '')
     is_barbarian = request.form.get('barbarian', 'false') == 'true'
-
     forces = []
-
     if is_barbarian:
         force_list = Force.query.filter(Force.force_name.contains(selected_barbarian)).order_by(Force.force_name).all()
         forces = [(force.force_id, force.force_name) for force in force_list]
@@ -106,6 +103,16 @@ def get_orders_by_force():
             order_list.append((national_orders.order_id, national_orders.order_name, national_orders.offensive_order))
         order_list = [order for order in order_list if order[0] != 5]
 
+    if force.nation_id == 9:
+        national_orders = Order.query.filter(Order.order_id == 52).first()
+        if national_orders:
+            order_list.append((national_orders.order_id, national_orders.order_name, national_orders.offensive_order))
+
+    if force.nation_id == 10:
+        national_orders = Order.query.filter(Order.order_id == 53).first()
+        if national_orders:
+            order_list.append((national_orders.order_id, national_orders.order_name, national_orders.offensive_order))
+
     if force.nation.nation_faction != "The Empire":
         order_list = [order for order in order_list if order[0] !=4]
 
@@ -136,15 +143,18 @@ def get_fortification_info():
     fortification = Fortification.query.get(fortification_id)
     if fortification:
         return jsonify({
-            'strength': fortification.fortification_maximum_strength
+            'strength': fortification.fortification_maximum_strength,
         })
     return jsonify({'error': 'Fortification not found'}), 404
 
 @bp.route('/get_rituals_by_fortification', methods=['POST'])
 def get_rituals_by_fortification():
-    fortification_rituals = Fortification_Ritual.query.filter(Fortification_Ritual.fortification_ritual_id > 0).order_by(Fortification_Ritual.fortification_ritual_name).all()
-    fortification_ritual_list = [(ritual.fortification_ritual_id, ritual.fortification_ritual_name) for ritual in fortification_rituals]
-
+    fortification_ritual_list = []
+    fortification_id = request.form['fortification_id']
+    fortification = Fortification.query.get(fortification_id)
+    if not fortification.fortification_magical:
+        fortification_rituals = Fortification_Ritual.query.filter(Fortification_Ritual.fortification_ritual_id > 0).order_by(Fortification_Ritual.fortification_ritual_name).all()
+        fortification_ritual_list = [(ritual.fortification_ritual_id, ritual.fortification_ritual_name) for ritual in fortification_rituals]
     return jsonify({'rituals': fortification_ritual_list})
 
 @bp.route('/get_fortification_ritual_effect', methods=['POST'])
@@ -156,6 +166,36 @@ def get_fortification_ritual_effect():
             'fortification_effective_strength_modifier': ritual.fortification_effective_strength_modifier,
         })
     return jsonify({'error': 'Ritual not found'}), 404
+
+@bp.route('/get_mu_support_options', methods=['POST'])
+def get_mu_support_options():
+    role = request.form.get('role')
+    selected_barbarian = request.form.get('selected_barbarian', '')
+    is_barbarian = request.form.get('barbarian', 'false') == 'true'
+    if not is_barbarian and role == 'barbarian':
+        is_barbarian = True
+    
+    forces = []
+    
+    if is_barbarian:
+        if selected_barbarian:
+            force_list = Force.query.filter(Force.force_name.contains(selected_barbarian)).order_by(Force.force_name).all()
+        else:
+            force_list = Force.query.join(Nation).filter(Nation.nation_faction == 'Barbarian').order_by(Force.force_name).all()
+        forces = [{'id': force.force_id, 'name': force.force_name, 'type': 'force'} for force in force_list]
+    else:
+        force_list = Force.query.join(Nation).filter(Nation.nation_faction == 'The Empire').order_by(Force.force_name).all()
+        forces = [{'id': force.force_id, 'name': force.force_name, 'type': 'force'} for force in force_list]
+
+    fortification_list = []
+    if is_barbarian:
+        fortification_list = [{'id': fortification.fortification_id, 'name': fortification.fortification_name, 'type': 'fortification'} for fortification in Fortification.query.filter(Fortification.fortification_id > 0, Fortification.fortification_id < 6).order_by(Fortification.fortification_name).all()]
+    else:
+        fortification_list = [{'id': fortification.fortification_id, 'name': fortification.fortification_name, 'type': 'fortification'} for fortification in Fortification.query.filter(Fortification.fortification_id >= 6).order_by(Fortification.fortification_name).all()]
+
+    forces.extend(fortification_list)
+    
+    return jsonify({'forces': forces})
 
 @bp.route('/calculate_outcome', methods=['POST'])
 def calculate_outcome():
@@ -183,7 +223,7 @@ def calculate_outcome():
     for imperial_force_data in data['imperial_forces']:
         force_id = imperial_force_data['force']
         force = Force.query.get(force_id)
-        casualties_inflicted, offensive_victory_contribution, defensive_victory_contribution = calculate_force_strength(imperial_force_data, data['imperial_forces'])
+        casualties_inflicted, offensive_victory_contribution, defensive_victory_contribution = calculate_force_strength(imperial_force_data, data['imperial_forces'], data['barbarian_forces'], data['imperial_military_units'])
         total_imperial_casualties_inflicted += int(casualties_inflicted)
         imperial_offensive_victory_contribution += int(offensive_victory_contribution)
         imperial_defensive_victory_contribution += int(defensive_victory_contribution)
@@ -201,7 +241,7 @@ def calculate_outcome():
     for imperial_fort_data in data['imperial_fortifications']:
         force_id = imperial_fort_data['fortification']
         force = Fortification.query.get(force_id)
-        casualties_inflicted, victory_contribution = calculate_fortification_strength(imperial_fort_data)
+        casualties_inflicted, victory_contribution = calculate_fortification_strength(imperial_fort_data, data['imperial_military_units'])
         imperial_defensive_victory_contribution += int(victory_contribution)
         total_imperial_victory_contribution += int(victory_contribution)
         total_imperial_casualties_inflicted += int(casualties_inflicted)
@@ -218,7 +258,7 @@ def calculate_outcome():
     for barbarian_force_data in data['barbarian_forces']:
         force_id = barbarian_force_data['force']
         force = Force.query.get(force_id)
-        casualties_inflicted, offensive_victory_contribution, defensive_victory_contribution = calculate_force_strength(barbarian_force_data, data['barbarian_forces'])
+        casualties_inflicted, offensive_victory_contribution, defensive_victory_contribution = calculate_force_strength(barbarian_force_data, data['barbarian_forces'], data['imperial_forces'], data['barbarian_military_units'])
         total_barbarian_casualties_inflicted += int(casualties_inflicted)
         barbarian_offensive_victory_contribution += int(offensive_victory_contribution)
         barbarian_defensive_victory_contribution += int(defensive_victory_contribution)
@@ -236,7 +276,7 @@ def calculate_outcome():
     for barbarian_fort_data in data['barbarian_fortifications']:
         force_id = barbarian_fort_data['fortification']
         force = Fortification.query.get(force_id)
-        casualties_inflicted, victory_contribution = calculate_fortification_strength(barbarian_fort_data)
+        casualties_inflicted, victory_contribution = calculate_fortification_strength(barbarian_fort_data, data['barbarian_military_units'])
         barbarian_defensive_victory_contribution += int(victory_contribution)
         total_barbarian_victory_contribution += int(victory_contribution)
         total_barbarian_casualties_inflicted += int(casualties_inflicted)
@@ -303,22 +343,80 @@ def calculate_outcome():
     
     return jsonify(summary)
 
-def calculate_force_strength(force_data, all_forces):
+def calculate_force_strength(force_data, all_forces, opposing_forces, military_units):
     victory_modifier = 0
     force_data_strength = force_data['strength']
     if force_data_strength == '':
         force_data_strength = 0
     force_strength = int(force_data_strength)
+    nation_victory_modifier = 1
+    nation_casualty_modifier = 1
+    encountered_nations = set()  
+
+    force_id = force_data['force']
+    force = Force.query.get(force_id)
+
+    if force.nation_id == 9:  
+        for other_force in all_forces:
+            if other_force == force_data:
+                continue
+            other_force_id = other_force['force']
+            other_force_data = Force.query.get(other_force_id)
+            if other_force_data.nation_id in (10, 5) and other_force_data.nation_id not in encountered_nations:
+                nation_victory_modifier -= 0.1  
+                encountered_nations.add(other_force_data.nation_id) 
+
+    if force.nation_id == 10:
+        for opposing_force in opposing_forces:
+            opposing_force_id = opposing_force['force']
+            opposing_force_data = Force.query.get(opposing_force_id)
+            if opposing_force_data.nation_id == 13:
+                nation_victory_modifier += 0.1
+                nation_casualty_modifier -= 0.2
+
     order_id = force_data['order']
     if order_id == '':
         order_id = 6
     order = Order.query.get(order_id)
+
+    if order.order_name == 'Plunder' or order.order_name == 'Cut Them Down' or order.order_name == 'Merciless Assault':
+        for force in all_forces:
+            if force == force_data:
+                continue
+            other_order_id = force['order']
+            other_order = Order.query.get(other_order_id)
+            if other_order.order_name == 'Fight With Honour':
+                order_id = 2
+            order = Order.query.get(order_id)
+
     force_ritual_id = force_data['ritual']
     if force_ritual_id == '':
         force_ritual_id = 0
     force_ritual = Force_Ritual.query.get(force_ritual_id)
+
+    for unit in military_units:
+        if unit['type'] == 'fortification':
+            continue
+        if unit['force'] == force_data['force']:
+            force_strength += int(unit['strength'])
+            if force_ritual.force_ritual_id != 1:
+                continue
+            unit_count = int(unit['count'])
+            for i in range(min(75, unit_count)):
+                if i < 15:
+                    victory_modifier += 50
+                elif i < 30:
+                    victory_modifier += 40
+                elif i < 45:
+                    victory_modifier += 30
+                elif i < 60:
+                    victory_modifier += 20
+                else:
+                    victory_modifier += 10
+
     ritual_strength = force_ritual.force_effective_strength_modifier
     force_strength += ritual_strength
+
     casualties_inflicted_modifier = order.casualties_inflicted_modifier
     
     additional_casualties_inflicted_modifier = 0
@@ -335,20 +433,27 @@ def calculate_force_strength(force_data, all_forces):
             additional_casualties_inflicted_modifier += 0.1
     
     casualties_inflicted = int(((force_strength * (1 + casualties_inflicted_modifier + additional_casualties_inflicted_modifier))/10))
+    casualties_inflicted = casualties_inflicted * nation_casualty_modifier
     if force_ritual.force_ritual_id == 2:
         victory_modifier = 2000
+
     if order.offensive_order:
         offensive_victory_modifier = order.territory_claimed_modifier
         offensive_victory_contribution = force_strength * (1 + offensive_victory_modifier) + victory_modifier
+        offensive_victory_contribution = offensive_victory_contribution * nation_victory_modifier
         defensive_victory_contribution = 0
     else:
         defensive_victory_modifier = order.territory_defence_modifier
         defensive_victory_contribution = force_strength * (1 + defensive_victory_modifier) + victory_modifier
+        defensive_victory_contribution = defensive_victory_contribution * nation_victory_modifier
         offensive_victory_contribution = 0
+
+    print(f'Force: {force_data["force"]}, Strength: {force_strength}, Casualties Inflicted: {casualties_inflicted}, Offensive Victory Contribution: {offensive_victory_contribution}, Defensive Victory Contribution: {defensive_victory_contribution}')
     return casualties_inflicted, offensive_victory_contribution, defensive_victory_contribution
 
-def calculate_fortification_strength(fort_data):
+def calculate_fortification_strength(fort_data, military_units):
     fort_casualties_inflicted = 0
+    bonus_strength = 0
     fort_ritual_id = fort_data['ritual']
     if fort_ritual_id == '':
         fort_ritual_id = 0
@@ -356,13 +461,22 @@ def calculate_fortification_strength(fort_data):
     fort_ritual_strength = fort_ritual.fortification_effective_strength_modifier
     if fort_data['strength'].isdigit():
         fort_strength = int(fort_data['strength'])
+
+    for unit in military_units:
+        if unit['type'] == 'force':
+            continue
+        if unit['force'] == fort_data['fortification']:
+            bonus_strength = int(unit['strength'])
+
+    
     fort_strength += fort_ritual_strength
     if fort_data['besieged']:
-        fort_victory_contribution = fort_strength * 2
-        fort_casualties_inflicted = fort_strength/10
+        fort_victory_contribution = (fort_strength * 2) + bonus_strength
+        fort_casualties_inflicted = (fort_strength + bonus_strength) /10
     else:
-        fort_victory_contribution = fort_strength
+        fort_victory_contribution = fort_strength + bonus_strength
     
+    print(f'Fortification: {fort_data["fortification"]}, Strength: {fort_strength}, Casualties Inflicted: {fort_casualties_inflicted}, Victory Contribution: {fort_victory_contribution}')
     return fort_casualties_inflicted, fort_victory_contribution
 
 def calculate_victory_points(total_imperial_victory_contribution, imperial_offensive_victory_contribution,
@@ -473,6 +587,8 @@ def distribute_force_casualties(total_casualties_inflicted, forces, outcome, off
     force_break = 1000
     large_force_break = 1250
     offensive_victory_points = offensive_victory_points
+    magical_fortifications = []
+    nation_casualty_modifier = 1
 
     # Filter forces based on conditions
     filtered_forces = [force for force in forces if 'force' in force and force.get('order') != "42"]
@@ -480,12 +596,24 @@ def distribute_force_casualties(total_casualties_inflicted, forces, outcome, off
     if is_barbarian:
         total_forces = all_barbarian_forces
         exempt_fortifications = [force for force in all_barbarian_forces if 'fortification' in force and not force.get('besieged')]
+        for force in all_barbarian_forces:
+            if 'fortification' in force and force.get('besieged'):
+                fortification_id = force.get('fortification')
+                fortification = Fortification.query.get(fortification_id)
+                if fortification.fortification_magical:
+                    magical_fortifications.append(fortification_id)
     else:
         total_forces = all_imperial_forces
         exempt_fortifications = [force for force in all_imperial_forces if 'fortification' in force and not force.get('besieged')]
-
+        for force in all_imperial_forces:
+            if 'fortification' in force and force.get('besieged'):
+                fortification_id = force.get('fortification')
+                fortification = Fortification.query.get(fortification_id)
+                if fortification.fortification_magical:
+                    magical_fortifications.append(fortification_id)
+    filtered_forces = [force for force in filtered_forces if force.get('fortification') not in magical_fortifications]
     exempt_forces = [force for force in forces if 'force' in force and force.get('order') == "42"]
-    exceptions = exempt_fortifications + exempt_forces
+    exceptions = exempt_fortifications + exempt_forces + magical_fortifications
 
     # Check for global effects from barbarian and imperial orders
     if any(force in all_barbarian_forces for force in forces):
@@ -530,7 +658,16 @@ def distribute_force_casualties(total_casualties_inflicted, forces, outcome, off
         if (outcome == 'Imperial Victory' and force in all_imperial_forces) or (outcome == 'Barbarian Victory' and force in all_barbarian_forces):
             modifier -= (defensive_victory_points / 100)
 
+        if force_details.nation_id == 10:
+            for opposing_force in all_barbarian_forces:
+                if 'force' in opposing_force:
+                    opposing_force_id = opposing_force['force']
+                    opposing_force_data = Force.query.get(opposing_force_id)
+                    if opposing_force_data.nation_id == 13:
+                        nation_casualty_modifier -= 0.1
+                        
         modified_casualties = int(total_casualties_inflicted / (len(total_forces) - len(exceptions)) * modifier)
+        modified_casualties = int(modified_casualties * nation_casualty_modifier)
         if order_id and order.order_name == 'Lay Low':
             modified_casualties = 0
 
@@ -553,10 +690,17 @@ def distribute_fortification_casualties(total_casualties_inflicted, forces, outc
     casualties_taken = {}
     remaining_strength = {}
     fortification_break = 1000
-    extra_fortification_casualties = 0
+    magical_fortifications = []
+    for force in forces:
+        if 'fortification' in force:
+            fortification_id = force.get('fortification')
+            fortification = Fortification.query.get(fortification_id)
+            if fortification.fortification_magical:
+                magical_fortifications.append(fortification_id)
 
     # Filter forces based on conditions
     filtered_fortifications = [force for force in forces if 'fortification' in force and force.get('besieged')]
+    filtered_fortifications = [force for force in filtered_fortifications if force.get('fortification') not in magical_fortifications]
     if is_barbarian:
         total_forces = barbarian_forces
         exempt_forces = [force for force in total_forces if 'force' in force and force.get('order') == "42"]
@@ -564,9 +708,10 @@ def distribute_fortification_casualties(total_casualties_inflicted, forces, outc
         total_forces = imperial_forces
         exempt_forces = [force for force in total_forces if 'force' in force and force.get('order') == "42"]
     exempt_fortifications = [force for force in forces if 'fortification' in force and not force.get('besieged')]
-    exceptions = exempt_forces + exempt_fortifications
+    exceptions = exempt_forces + exempt_fortifications + magical_fortifications
 
     # Only apply Storm the Walls logic if processing barbarian fortifications
+    extra_fortification_casualties = 0
     if is_barbarian:
         for force in imperial_forces:
             order_id = force.get('order')

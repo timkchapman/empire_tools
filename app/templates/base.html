@@ -49,6 +49,28 @@
             color: #333;
             text-decoration: none;
         }
+
+        .content {
+            width: 100%;
+            max-width: 960px;
+            margin: 80px auto 20px auto;
+            padding: 10px;
+        }
+
+        .footer {
+            width: 100%;
+            text-align: center;
+            padding: 10px 0;
+            position: relative;
+            bottom: 0;
+        }
+
+        .global-title {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 
@@ -57,7 +79,7 @@
         <div class="row">
             <div class="col text-center">
                 <a href="/">
-                    <h1>Empire Tools</h1>
+                    <h1 class="global-title">Empire Tools</h1>
                 </a>
             </div>
         </div>
@@ -73,9 +95,24 @@
             <a href="{{ url_for('manouveres.index') }}">Campaign Outcome</a>
             <a href="{{ url_for('calculator.index') }}">Calculator</a>
         </div>
-        <div class=" row">
+        <div class="content">
             {% block content %}{% endblock %}
         </div>
+
+        <footer class="footer">
+            <div class="container">
+                <span class="text-muted">
+                    &copy; 2024 TMBC DIGITAL SOLUTIONS. All Rights Reserved.
+                </span>
+                <br>
+                <span class="text-muted">
+                    Empire LARP content is owned by Profound Decisions and is licensed under a
+                    <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative Commons
+                        Attribution-Share Alike 4.0 International license</a>.
+                    This site is not an official Empire Product.
+                </span>
+            </div>
+        </footer>
     </div>
 
     <!-- Bootstrap Bundle with Popper -->

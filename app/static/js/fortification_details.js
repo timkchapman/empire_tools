@@ -119,31 +119,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function fetchFortificationRitualOptions(role, index) {
+        var fortificationDropdown = document.getElementById(`${role}-fortification-${index}`);
         var fortificationRitualDropdown = document.getElementById(`${role}-fortification-ritual-${index}`);
         var csrfToken = document.querySelector('input[name="csrf_token"]').value;
 
-        // Fetch fortification ritual options
-        fetch('/get_rituals_by_fortification', {
-            method: 'POST',
-            body: new URLSearchParams({
-                'csrf_token': csrfToken
-            }),
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                // Populate the dropdown list with fortification ritual options
-                fortificationRitualDropdown.innerHTML = '<option value="">Select Ritual</option>';
-                data.rituals.forEach(ritual => {
-                    var option = document.createElement('option');
-                    option.value = ritual[0];
-                    option.textContent = ritual[1];
-                    fortificationRitualDropdown.appendChild(option);
-                });
+        fortificationDropdown.addEventListener('change', function () {
+            var fortificationId = this.value; // Get the selected fortification ID
+
+            // Fetch fortification ritual options
+            fetch('/get_rituals_by_fortification', {
+                method: 'POST',
+                body: new URLSearchParams({
+                    'fortification_id': fortificationId,
+                    'csrf_token': csrfToken
+                }),
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
             })
-            .catch(error => console.error('Error:', error));
+                .then(response => response.json())
+                .then(data => {
+                    // Populate the dropdown list with fortification ritual options
+                    fortificationRitualDropdown.innerHTML = '<option value="">Select Ritual</option>';
+                    data.rituals.forEach(ritual => {
+                        var option = document.createElement('option');
+                        option.value = ritual[0];
+                        option.textContent = ritual[1];
+                        fortificationRitualDropdown.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        });
     }
 
     function updateFortificationStrength(role, index) {
