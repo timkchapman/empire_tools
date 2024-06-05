@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col text-center">
+            <a href="{{ url_for('manouveres.qualities', _external=True) }}">
+                <h2>Qualities</h2>
+            </a>
+        </div>
+    </div>
+    <table id="qualityTable" class="table table-hover">
+        <thead>
+            <tr class="table-info">
+                <th>Quality <button onclick="sortTable(0)"><span id="arrowQuality" class="arrow"></span></th>
+                <th>Effects</th>
+                <th>Aliases</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for quality in qualities %}
+            <tr class="table-dark">
+                <td>{{ quality.quality_name }}</td>
+                <td>
+                    <ul>
+                        {% for effect in quality.effects_as_list() %}
+                        <li>{{ effect }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>{{ quality.quality_descriptors }}</td>
+                <td>{{ quality.quality_description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='js/qualities_sort.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col text-center">
+            <a href="{{ url_for('manouveres.orders', _external=True) }}">
+                <h2>Orders</h2>
+            </a>
+        </div>
+    </div>
+    <table id="orderTable" class="table table-hover">
+        <thead>
+            <tr class="table-info">
+                <th>Order <button onclick="sortTable(0)"><span id="arrowOrder" class="arrow"></span></th>
+                <th>Type <button onclick="sortTable(1)"><span id="arrowType" class="arrow"></span></th>
+                <th>Effects</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr class="table-dark">
+                <td>{{ order.order_name }}</td>
+                {% if order.offensive_order %}
+                <td>Offensive</td>
+                {% else %}
+                <td>Defensive</td>
+                {% endif %}
+                <td>
+                    <ul>
+                        {% for effect in order.effects_as_list() %}
+                        <li>{{ effect }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>{{ order.order_description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="{{ url_for('static', filename='js/orders_sort.js') }}"></script>
+{% endblock %}

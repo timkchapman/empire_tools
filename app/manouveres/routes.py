@@ -5,6 +5,7 @@ from flask import render_template, request, jsonify, redirect
 
 @bp.route('/manouveres', methods=['GET', 'POST'])
 def index():
+    current_page = 'manouveres'
     imperial_forces = [(force.force_id, force.force_name) for force in Force.query.join(Nation).filter(Nation.nation_faction == 'The Empire').order_by(Force.force_name).all()]
     barbarian_forces = [(force.force_id, force.force_name) for force in Force.query.join(Nation).filter(Nation.nation_faction == 'Barbarian').order_by(Force.force_name).all()]
     imperial_forces.insert(0, ('', 'Select Force'))
@@ -28,7 +29,7 @@ def index():
     imperial_military_units_form = MilitaryUnitsForm
     barbarian_military_units_form = MilitaryUnitsForm
 
-    return render_template('manouveres.html', imperial_form=imperial_form, barbarian_form=barbarian_form, imperial_military_units_form=imperial_military_units_form, barbarian_military_units_form=barbarian_military_units_form)
+    return render_template('manouveres.html', imperial_form=imperial_form, barbarian_form=barbarian_form, imperial_military_units_form=imperial_military_units_form, barbarian_military_units_form=barbarian_military_units_form, current_page=current_page)
 
 @bp.route('/manouveres/')
 def manouveres_with_slash():
@@ -665,7 +666,7 @@ def distribute_force_casualties(total_casualties_inflicted, forces, outcome, off
                     opposing_force_data = Force.query.get(opposing_force_id)
                     if opposing_force_data.nation_id == 13:
                         nation_casualty_modifier -= 0.1
-                        
+
         modified_casualties = int(total_casualties_inflicted / (len(total_forces) - len(exceptions)) * modifier)
         modified_casualties = int(modified_casualties * nation_casualty_modifier)
         if order_id and order.order_name == 'Lay Low':
@@ -765,15 +766,18 @@ def calculate_final_stand_casualties(force, offensive_vp):
 
 @bp.route('/forces')
 def forces():
-    forces = Force.query.filter(Force.force_id != 0).all()
-    return render_template('forces.html', forces=forces)
+    current_page = 'manouveres'
+    forces = Force.query.join(Force.nation).filter(Force.force_id != 0, Nation.nation_faction == 'The Empire').all()
+    return render_template('manouveres/forces.html', forces=forces, current_page = current_page)
 
 @bp.route('/qualities')
 def qualities():
+    current_page = 'manouveres'
     qualities = Quality.query.filter(Quality.quality_id != 0).all()
-    return render_template('qualities.html', qualities=qualities)
+    return render_template('manouveres/qualities.html', qualities=qualities, current_page = current_page)
 
 @bp.route('/orders')
 def orders():
+    current_page = 'manouveres'
     orders = Order.query.filter(Order.order_id != 0).all()
-    return render_template('orders.html', orders=orders)
+    return render_template('manouveres/orders.html', orders=orders, current_page = current_page)
