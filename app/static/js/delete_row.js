@@ -1,4 +1,3 @@
-
 $(document).ready(function () {
     // Add click event listener to delete button
     $('.delete-barbarian-row').click(function () {
@@ -8,5 +7,16 @@ $(document).ready(function () {
         // Remove the row from the table
         $('#' + rowId).remove();
     });
+
+    // Add click event listener to delete button
+    $('.delete-imperial-row').click(function () {
+        // Get the ID of the row to be deleted
+        var rowId = $(this).data('row-id');
+
+        // Remove the row from the table
+        $('#' + rowId).remove();
+    });
 });
+
+
 

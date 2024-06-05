@@ -19,6 +19,7 @@ class Fortification(db.Model):
     fortification_name = db.Column(db.String(80), unique=True, nullable=False)
     fortification_level = db.Column(db.Integer, nullable=False)
     fortification_maximum_strength = db.Column(db.Integer, nullable=False)
+    fortification_magical = db.Column(db.Boolean, nullable=False)
 
     def __repr__(self):
         return '<Fortification %r>' % self.fortification_name

@@ -136,15 +136,18 @@ def get_fortification_info():
     fortification = Fortification.query.get(fortification_id)
     if fortification:
         return jsonify({
-            'strength': fortification.fortification_maximum_strength
+            'strength': fortification.fortification_maximum_strength,
         })
     return jsonify({'error': 'Fortification not found'}), 404
 
 @bp.route('/get_rituals_by_fortification', methods=['POST'])
 def get_rituals_by_fortification():
-    fortification_rituals = Fortification_Ritual.query.filter(Fortification_Ritual.fortification_ritual_id > 0).order_by(Fortification_Ritual.fortification_ritual_name).all()
-    fortification_ritual_list = [(ritual.fortification_ritual_id, ritual.fortification_ritual_name) for ritual in fortification_rituals]
-
+    fortification_ritual_list = []
+    fortification_id = request.form['fortification_id']
+    fortification = Fortification.query.get(fortification_id)
+    if not fortification.fortification_magical:
+        fortification_rituals = Fortification_Ritual.query.filter(Fortification_Ritual.fortification_ritual_id > 0).order_by(Fortification_Ritual.fortification_ritual_name).all()
+        fortification_ritual_list = [(ritual.fortification_ritual_id, ritual.fortification_ritual_name) for ritual in fortification_rituals]
     return jsonify({'rituals': fortification_ritual_list})
 
 @bp.route('/get_fortification_ritual_effect', methods=['POST'])
@@ -473,6 +476,7 @@ def distribute_force_casualties(total_casualties_inflicted, forces, outcome, off
     force_break = 1000
     large_force_break = 1250
     offensive_victory_points = offensive_victory_points
+    magical_fortifications = []
 
     # Filter forces based on conditions
     filtered_forces = [force for force in forces if 'force' in force and force.get('order') != "42"]
@@ -480,12 +484,24 @@ def distribute_force_casualties(total_casualties_inflicted, forces, outcome, off
     if is_barbarian:
         total_forces = all_barbarian_forces
         exempt_fortifications = [force for force in all_barbarian_forces if 'fortification' in force and not force.get('besieged')]
+        for force in all_barbarian_forces:
+            if 'fortification' in force and force.get('besieged'):
+                fortification_id = force.get('fortification')
+                fortification = Fortification.query.get(fortification_id)
+                if fortification.fortification_magical:
+                    magical_fortifications.append(fortification_id)
     else:
         total_forces = all_imperial_forces
         exempt_fortifications = [force for force in all_imperial_forces if 'fortification' in force and not force.get('besieged')]
-
+        for force in all_imperial_forces:
+            if 'fortification' in force and force.get('besieged'):
+                fortification_id = force.get('fortification')
+                fortification = Fortification.query.get(fortification_id)
+                if fortification.fortification_magical:
+                    magical_fortifications.append(fortification_id)
+    filtered_forces = [force for force in filtered_forces if force.get('fortification') not in magical_fortifications]
     exempt_forces = [force for force in forces if 'force' in force and force.get('order') == "42"]
-    exceptions = exempt_fortifications + exempt_forces
+    exceptions = exempt_fortifications + exempt_forces + magical_fortifications
 
     # Check for global effects from barbarian and imperial orders
     if any(force in all_barbarian_forces for force in forces):
@@ -553,10 +569,17 @@ def distribute_fortification_casualties(total_casualties_inflicted, forces, outc
     casualties_taken = {}
     remaining_strength = {}
     fortification_break = 1000
-    extra_fortification_casualties = 0
+    magical_fortifications = []
+    for force in forces:
+        if 'fortification' in force:
+            fortification_id = force.get('fortification')
+            fortification = Fortification.query.get(fortification_id)
+            if fortification.fortification_magical:
+                magical_fortifications.append(fortification_id)
 
     # Filter forces based on conditions
     filtered_fortifications = [force for force in forces if 'fortification' in force and force.get('besieged')]
+    filtered_fortifications = [force for force in filtered_fortifications if force.get('fortification') not in magical_fortifications]
     if is_barbarian:
         total_forces = barbarian_forces
         exempt_forces = [force for force in total_forces if 'force' in force and force.get('order') == "42"]
@@ -564,9 +587,10 @@ def distribute_fortification_casualties(total_casualties_inflicted, forces, outc
         total_forces = imperial_forces
         exempt_forces = [force for force in total_forces if 'force' in force and force.get('order') == "42"]
     exempt_fortifications = [force for force in forces if 'fortification' in force and not force.get('besieged')]
-    exceptions = exempt_forces + exempt_fortifications
+    exceptions = exempt_forces + exempt_fortifications + magical_fortifications
 
     # Only apply Storm the Walls logic if processing barbarian fortifications
+    extra_fortification_casualties = 0
     if is_barbarian:
         for force in imperial_forces:
             order_id = force.get('order')
