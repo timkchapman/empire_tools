@@ -72,44 +72,44 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" id="calculate-outcome" class="btn btn-success mb-3">Calculate Outcome</button>
     </form>
-</div>
 
-<div id="summary-container">
-    <h2>Outcome:</h2>
-    <table class="table table-bordered">
-        <thead>
-            <tr class="table-info">
-                <th>Outcome</th>
-                <th>Total Victory Points</th>
-                <th>Offensive Victory Points</th>
-                <th>Defensive Victory Points</th>
-            </tr>
-        </thead>
-        <tbody id="summary">
-            <tr class="table-dark">
-                <td id="summary-outcome"></td>
-                <td id="summary-total-victory-points"></td>
-                <td id="summary-offensive-victory-points"></td>
-                <td id="summary-defensive-victory-points"></td>
-            </tr>
-        </tbody>
-    </table>
-    <table class="table table-bordered">
-        <thead>
-            <tr class="table-info">
-                <th>Force</th>
-                <th>Casualties Taken</th>
-                <th>Remaining Strength</th>
-            </tr>
-        </thead>
-        <tbody id="summary-forces-details">
-            <tr class="table-dark">
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
-        </tbody>
-    </table>
+    <div id="summary-container">
+        <h2>Outcome:</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr class="table-info">
+                    <th>Outcome</th>
+                    <th>Total Victory Points</th>
+                    <th>Offensive Victory Points</th>
+                    <th>Defensive Victory Points</th>
+                </tr>
+            </thead>
+            <tbody id="summary">
+                <tr class="table-dark">
+                    <td id="summary-outcome"></td>
+                    <td id="summary-total-victory-points"></td>
+                    <td id="summary-offensive-victory-points"></td>
+                    <td id="summary-defensive-victory-points"></td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="table table-bordered">
+            <thead>
+                <tr class="table-info">
+                    <th>Force</th>
+                    <th>Casualties Taken</th>
+                    <th>Remaining Strength</th>
+                </tr>
+            </thead>
+            <tbody id="summary-forces-details">
+                <tr class="table-dark">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <!-- Modal -->
