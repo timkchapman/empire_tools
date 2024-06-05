@@ -15,7 +15,6 @@
                 <th>Order <button onclick="sortTable(0)"><span id="arrowOrder" class="arrow"></span></th>
                 <th>Type <button onclick="sortTable(1)"><span id="arrowType" class="arrow"></span></th>
                 <th>Effects</th>
-                <th>Description</th>
             </tr>
         </thead>
         <tbody>
@@ -34,7 +33,6 @@
                         {% endfor %}
                     </ul>
                 </td>
-                <td>{{ order.order_description }}</td>
             </tr>
             {% endfor %}
         </tbody>
