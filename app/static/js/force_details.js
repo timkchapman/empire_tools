@@ -184,7 +184,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (selectedBarbarian === '') {
             for (let i = 0; i < barbarianCount; i++) {
-                document.getElementById('barbarian-force-' + i).innerHTML = '<option value="">Select Force</option>';
+                var forceDropdown = document.getElementById('barbarian-force-' + i);
+                if (forceDropdown) {
+                    forceDropdown.innerHTML = '<option value="">Select Force</option>';
+                }
             }
             return;
         }
@@ -205,13 +208,15 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 for (let i = 0; i < barbarianCount; i++) {
                     var forceDropdown = document.getElementById('barbarian-force-' + i);
-                    forceDropdown.innerHTML = '<option value="">Select Force</option>';
-                    data.forces.forEach(force => {
-                        var option = document.createElement('option');
-                        option.value = force[0];
-                        option.textContent = force[1];
-                        forceDropdown.appendChild(option);
-                    });
+                    if (forceDropdown) {
+                        forceDropdown.innerHTML = '<option value="">Select Force</option>';
+                        data.forces.forEach(force => {
+                            var option = document.createElement('option');
+                            option.value = force[0];
+                            option.textContent = force[1];
+                            forceDropdown.appendChild(option);
+                        });
+                    }
                 }
             })
             .catch(error => console.error('Error:', error));
@@ -284,4 +289,74 @@ document.addEventListener('DOMContentLoaded', function () {
             strengthField.value = baseStrength;
         }
     }
+
+    document.getElementById('add-imperial-military-units').addEventListener('click', function (e) {
+        e.preventDefault();
+        addMilitaryUnitRow('imperial', imperialCount);
+        imperialCount++;
+    });
+
+    document.getElementById('add-barbarian-military-units').addEventListener('click', function (e) {
+        e.preventDefault();
+        addMilitaryUnitRow('barbarian', barbarianCount);
+        barbarianCount++;
+    });
+
+    function addMilitaryUnitRow(role, index) {
+        var militaryUnitsTable = document.getElementById(role + '-military-units');
+        var newRow = document.createElement('tr');
+        newRow.id = role + '-mu-row-' + index;
+
+        newRow.innerHTML = `
+            <td><input type="number" id="${role}-mu-count-${index}" class="form-control" name="${role}_mu[${index}][count]"></td>
+            <td><input type="number" id="${role}-mu-strength-${index}" class="form-control" name="${role}_mu[${index}][strength]"></td>
+            <td>
+                <select id="${role}-mu-force-${index}" class="form-control" name="${role}_mu[${index}][force]">
+                    <option value="">Select Force</option>
+                </select>
+            </td>
+            <td><button type="button" class="btn btn-danger delete-${role}-mu-row" data-row-id="${role}-mu-row-${index}">Delete</button></td>
+        `;
+
+        militaryUnitsTable.appendChild(newRow);
+
+        document.querySelector(`.delete-${role}-mu-row[data-row-id="${role}-mu-row-${index}"]`).addEventListener('click', function () {
+            document.getElementById(`${role}-mu-row-${index}`).remove();
+        });
+
+        // Fetch and populate forces dropdown list
+        fetchForces(role, index);
+    }
+
+    function fetchForces(role, index) {
+        var csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        var selectedBarbarian = document.getElementById('barbarian-force-selector').value;
+
+        fetch('/get_mu_support_options', {
+            method: 'POST',
+            body: new URLSearchParams({
+                'role': role,
+                'selected_barbarian': selectedBarbarian,
+                'csrf_token': csrfToken
+            }),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                var forceDropdown = document.getElementById(`${role}-mu-force-${index}`);
+                forceDropdown.innerHTML = '<option value="">Select Force</option>';
+                data.forces.forEach(force => {
+                    var option = document.createElement('option');
+                    option.value = force.id;
+                    option.textContent = force.name;
+                    option.dataset.type = force.type;
+                    forceDropdown.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+
 });
